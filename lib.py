@@ -37,3 +37,4 @@ def print_help():
         usage = info["usage"]
         print(f"{command:<15}{description:<50}")
         print(f"{'':<15}{'Usage: ' + usage:<50}")
+
