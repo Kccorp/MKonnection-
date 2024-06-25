@@ -6,6 +6,7 @@ from command_controller import Client
 import queue
 import sys
 
+
 server_host = '0.0.0.0'
 server_port = 1234
 max_number_of_connections = 5
@@ -23,7 +24,7 @@ def handle_client(conn, addr, command_queue):
     print(f"\n[+] New connection with {addr[0]}:{addr[1]}")
 
     current_thread = threading.current_thread()
-    print(f"Thread ID: {current_thread.ident} \nMko >", end=" ")
+    # print(f"Client ID : {current_thread.ident} \nMko >", end=" ")
 
     while connection_allowed:
         try:
@@ -83,7 +84,6 @@ def command_line_interface():
     while True:
         command = input("Mko > ")
 
-
         if command.startswith("use"):
             try:
                 thread_id = int(command.split()[1])
@@ -127,11 +127,16 @@ def command_line_interface():
             connection_allowed = False
             break
 
+        elif command == "help":
+            lib.print_help_manager()
         else:
             print("Unknown command. Try 'use <ID>' or 'list' to list all threads.")
 
 
 def main():
+    # display the banner
+    lib.print_mko_banner()
+
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((server_host, server_port))
     s.listen(max_number_of_connections)

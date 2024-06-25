@@ -1,12 +1,10 @@
-def print_help():
+import pyfiglet
+
+def print_help_client():
     commands = {
         "exit": {
-            "description": "Close the server or disconnect from a session.",
+            "description": "Close the client connection.",
             "usage": "exit"
-        },
-        "list": {
-            "description": "List currently connected clients.",
-            "usage": "list"
         },
         "upload": {
             "description": "Upload a file from the server to the client.",
@@ -31,10 +29,39 @@ def print_help():
     }
 
     print(f"{'Command':<15}{'Description and Usage':<50}")
-    print("="*65)
+    print("=" * 65)
     for command, info in commands.items():
         description = info["description"]
         usage = info["usage"]
         print(f"{command:<15}{description:<50}")
         print(f"{'':<15}{'Usage: ' + usage:<50}")
 
+
+def print_help_manager():
+    commands = {
+        "exit": {
+            "description": "Close the server or disconnect from a session.",
+            "usage": "exit"
+        },
+        "list": {
+            "description": "List currently connected clients.",
+            "usage": "list"
+        },
+        "use": {
+            "description": "Select a client to interact with.",
+            "usage": "use <client_id>"
+        }
+    }
+
+    print(f"{'Command':<15}{'Description and Usage':<50}")
+    print("=" * 65)
+    for command, info in commands.items():
+        description = info["description"]
+        usage = info["usage"]
+        print(f"{command:<15}{description:<50}")
+        print(f"{'':<15}{'Usage: ' + usage:<50}")
+
+
+def print_mko_banner():
+    # banner with pyfiglet
+    print(pyfiglet.figlet_format("MKonnection-", font="slant"))

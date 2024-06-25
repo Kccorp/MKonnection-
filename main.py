@@ -4,6 +4,7 @@ import threading
 import os
 from command_controller import Client
 
+
 server_host = '0.0.0.0'
 server_port = 1234
 max_number_of_connections = 5
