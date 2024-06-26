@@ -32,25 +32,42 @@ def handle_client(conn, addr, command_queue):
 
     current_thread = threading.current_thread()
 
+    client_os = conn.recv(1024).decode('utf-8')
+    client = Client(client_os)
+
     while connection_allowed:
         try:
             # Check if there are any commands to send to the client
             if not command_queue.empty():
-                # print(f"\nCommand run in thread {current_thread.ident}")
+                # Send the command to the client
                 command = command_queue.get()
                 conn.send(command.encode('utf-8'))
 
+                # If the command is "close", close the connection
+                if command.lower() == "close":
+                    break
+
+                # Receive the output of the command
                 message = conn.recv(1024).decode('utf-8')
                 if not message:
                     break
                 print(f"{message}\n")
                 lib.print_mko_client(current_thread.ident)
+
         except socket.timeout:
-            conn.send("exit".encode('utf-8'))
+            conn.send("close".encode('utf-8'))
             continue
 
-    print(f"[+] Connection closed with {addr[0]}:{addr[1]}")
+    print(f"\n[+] Connection closed with {addr[0]}:{addr[1]}")
+
+    if context_manager is None:
+        lib.print_mko_prefix()
+    else:
+        lib.print_mko_client(context_manager)
+
     conn.close()
+    clients.pop(clients.index((conn, addr)))
+    client_queues.pop(conn)
 
 
 def accept_clients(s):
@@ -96,20 +113,38 @@ def command_line_interface():
         if command.startswith("use"):
             try:
 
-                thread_id = int(command.split()[1])
-                if thread_id in thread_to_conn:
+                thread_id_from_command = int(command.split()[1])
+                thread_id = None
+                thread_index = None
+
+                if thread_id_from_command in thread_to_conn:
+                    # Get the thread ID with the value
+                    thread_id = thread_id_from_command
+
+                    # Get the thread index with the value
+                    for key, value in threads.items():
+                        if value == thread_id:
+                            thread_index = key
+                            break
+
+                elif thread_id_from_command in threads:
+                    thread_id = threads[thread_id_from_command]
+                    thread_index = thread_id_from_command
+
+                if thread_id is not None:
                     context_manager = thread_id
-                    lib.use_manger(thread_id, thread_to_conn, client_queues)
+                    if lib.use_manger(thread_id, thread_to_conn, client_queues) == "close":
+                        threads.pop(thread_index)
+                        thread_to_conn.pop(thread_id)
+
+
                     lib.print_mko_prefix()
                     context_manager = None
 
-                elif thread_id in threads:
-                    context_manager = threads[thread_id]
-                    lib.use_manger(threads[thread_id], thread_to_conn, client_queues)
-                    lib.print_mko_prefix()
-                    context_manager = None
+
                 else:
                     print(f"No thread found with ID {thread_id}")
+                    lib.print_mko_prefix()
 
             except Exception as e:
                 print(f"An error occurred")

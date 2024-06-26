@@ -18,7 +18,6 @@ class Client:
             self.os_client = "Windows"
         else:
             self.os_client = "Unknown"
-            print(f"Client OS: {os_client}")
 
     def get_client_os(self):
         return self.os_client

