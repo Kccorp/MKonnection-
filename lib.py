@@ -1,5 +1,6 @@
 import pyfiglet
 
+
 def print_help_client():
     commands = {
         "exit": {
@@ -65,3 +66,28 @@ def print_help_manager():
 def print_mko_banner():
     # banner with pyfiglet
     print(pyfiglet.figlet_format("MKonnection-", font="slant"))
+
+
+def print_mko_prefix():
+    print("MKo > ", end="")
+
+
+def print_mko_client(client_id):
+    print(f"MKo (client {client_id}) > ", end="")
+
+
+def use_manger(thread_id, thread_to_conn, client_queues):
+    print(f"You are now using client {thread_id}")
+    print_mko_client(thread_id)
+    # Interact with the selected thread
+    while True:
+        sub_command = input()
+
+        if sub_command.lower() == "exit":
+
+            break
+
+        if sub_command:
+
+            conn = thread_to_conn[thread_id]
+            client_queues[conn].put(sub_command)

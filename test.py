@@ -6,7 +6,6 @@ from command_controller import Client
 import queue
 import sys
 
-
 server_host = '0.0.0.0'
 server_port = 1234
 max_number_of_connections = 5
@@ -16,15 +15,22 @@ clients = []
 client_queues = {}
 thread_to_conn = {}
 
+context_manager = None  # Context manager to know in which context the program is running (client or manager)
+
 connection_allowed = True
 
 
 def handle_client(conn, addr, command_queue):
     global connection_allowed
+    global context_manager
     print(f"\n[+] New connection with {addr[0]}:{addr[1]}")
 
+    if context_manager is None:
+        lib.print_mko_prefix()
+    else:
+        lib.print_mko_client(context_manager)
+
     current_thread = threading.current_thread()
-    # print(f"Client ID : {current_thread.ident} \nMko >", end=" ")
 
     while connection_allowed:
         try:
@@ -38,7 +44,7 @@ def handle_client(conn, addr, command_queue):
                 if not message:
                     break
                 print(f"{message}\n")
-                print(f"Mko (thread {current_thread}) >", end=" ")
+                lib.print_mko_client(current_thread.ident)
         except socket.timeout:
             conn.send("exit".encode('utf-8'))
             continue
@@ -81,56 +87,50 @@ def accept_clients(s):
 # Function to interact with the terminal and choose a thread
 def command_line_interface():
     global connection_allowed
+    global context_manager
+    lib.print_mko_prefix()
+
     while True:
-        command = input("Mko > ")
+        command = input()
 
         if command.startswith("use"):
             try:
+
                 thread_id = int(command.split()[1])
                 if thread_id in thread_to_conn:
-                    print(f"You are now using thread {thread_id}")
-                    # Interact with the selected thread
-                    while True:
-                        sub_command = input(f"MKo (thread {thread_id}) > ")
-                        if sub_command.lower() == "exit":
-                            break
-                        if sub_command:
-                            conn = thread_to_conn[thread_id]
-                            client_queues[conn].put(sub_command)
-                elif thread_id in threads:
-                    print(f"You are now using thread {threads[thread_id]}")
-                    # Interact with the selected thread
-                    while True:
-                        sub_command = input(f"MKo (thread {threads[thread_id]}) > ")
-                        if sub_command.lower() == "exit":
-                            break
-                        if sub_command:
-                            conn = thread_to_conn[threads[thread_id]]
-                            client_queues[conn].put(sub_command)
+                    context_manager = thread_id
+                    lib.use_manger(thread_id, thread_to_conn, client_queues)
+                    lib.print_mko_prefix()
+                    context_manager = None
 
+                elif thread_id in threads:
+                    context_manager = threads[thread_id]
+                    lib.use_manger(threads[thread_id], thread_to_conn, client_queues)
+                    lib.print_mko_prefix()
+                    context_manager = None
                 else:
                     print(f"No thread found with ID {thread_id}")
-            # except any error that may occur
+
             except Exception as e:
                 print(f"An error occurred")
                 print("Unknown command. Try 'use <ID>' or 'list' to list all threads.")
-            # except ValueError:
-            #     print("Invalid thread ID. Please enter a valid thread ID.")
 
         elif command == "list":
             print("ID   TID   \n--   ---  ")
             for thread_id in threads:
                 print(f"{thread_id}   {threads[thread_id]}")
+            lib.print_mko_prefix()
 
         elif command == "exit":
             print("Exiting...")
             connection_allowed = False
             break
 
-        elif command == "help":
+        elif command == "help" or command == "?" or command == "h" or command == "H" or command == "HELP":
             lib.print_help_manager()
+            lib.print_mko_prefix()
         else:
-            print("Unknown command. Try 'use <ID>' or 'list' to list all threads.")
+            lib.print_mko_prefix()
 
 
 def main():
