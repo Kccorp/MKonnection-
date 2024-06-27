@@ -26,6 +26,10 @@ def print_help_client():
         "ls": {
             "description": "List files and directories in the client's current directory.",
             "usage": "ls"
+        },
+        "search": {
+            "description": "Search any file in client file system",
+            "usage": "seach <filename>"
         }
     }
 
@@ -36,7 +40,7 @@ def print_help_client():
         usage = info["usage"]
         print(f"{command:<15}{description:<50}")
         print(f"{'':<15}{'Usage: ' + usage:<50}")
-
+    print("\n")
 
 def print_help_manager():
     commands = {
