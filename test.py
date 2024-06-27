@@ -1,3 +1,4 @@
+import command_controller
 import lib
 import socket
 import threading
@@ -16,7 +17,6 @@ client_queues = {}
 thread_to_conn = {}
 
 context_manager = None  # Context manager to know in which context the program is running (client or manager)
-
 connection_allowed = True
 
 
@@ -39,19 +39,24 @@ def handle_client(conn, addr, command_queue):
         try:
             # Check if there are any commands to send to the client
             if not command_queue.empty():
-                # Send the command to the client
+                # prepare the command
                 command = command_queue.get()
-                conn.send(command.encode('utf-8'))
+                command = client.command_controller(command.lower())
 
-                # If the command is "close", close the connection
-                if command.lower() == "close":
-                    break
+                # Send the command to the client
+                if command != "help" and command != "unknown" and command != "error":
+                    conn.send(command.encode('utf-8'))
 
-                # Receive the output of the command
-                message = conn.recv(1024).decode('utf-8')
-                if not message:
-                    break
-                print(f"{message}\n")
+                    # If the command is "close", close the connection
+                    if command == "close":
+                        break
+
+                    # Receive the output of the command
+                    message = conn.recv(1024).decode('utf-8')
+                    if not message:
+                        break
+                    print(f"{message}\n")
+
                 lib.print_mko_client(current_thread.ident)
 
         except socket.timeout:
@@ -136,7 +141,6 @@ def command_line_interface():
                     if lib.use_manger(thread_id, thread_to_conn, client_queues) == "close":
                         threads.pop(thread_index)
                         thread_to_conn.pop(thread_id)
-
 
                     lib.print_mko_prefix()
                     context_manager = None
