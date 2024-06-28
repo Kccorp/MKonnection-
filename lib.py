@@ -1,3 +1,5 @@
+import os
+
 import pyfiglet
 
 
@@ -29,7 +31,7 @@ def print_help_client():
         },
         "search": {
             "description": "Search any file in client file system",
-            "usage": "seach <filename>"
+            "usage": "seach <file path>"
         }
     }
 
@@ -93,3 +95,21 @@ def use_manger(thread_id, thread_to_conn, client_queues):
 
         if sub_command == "close":
             return "close"
+
+
+def upload_file(file_path, conn):
+    file_size = os.path.getsize(file_path)
+    conn.send(file_size.to_bytes(8, 'big'))
+
+    cpt = 1
+    with open(file_path, "rb") as file:
+        while chunk := file.read(1024):
+            conn.send(chunk)
+            percent = conn.recv(1024).decode('utf-8')
+            # print(f"Pending", end="")
+            # print(pending + "."*cpt, end="", flush=True)
+            print("\rPending (" + percent + "%)" + "."*cpt, end="", flush=True)
+            if cpt == 3:
+                cpt = 1
+            else:
+                cpt += 1

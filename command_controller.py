@@ -57,22 +57,27 @@ class Client:
 
     def upload(self, command):
         file_path = command.split(" ")[1]
+        # remove quotes
+        file_path = file_path.replace('"', '')
+        print("file_path: ", file_path)
         if not os.path.isfile(file_path):
             print(f"Le fichier {file_path} n'existe pas.")
             return "error"
 
-        print(f"Uploading {file_path}...")
-        conn.send(command.encode('utf-8'))
+        return command
 
-        file_size = os.path.getsize(file_path)
-        conn.send(file_size.to_bytes(8, 'big'))
-        print(f"Sent file size: {file_size} bytes")
-
-        with open(file_path, "rb") as file:
-            while (chunk := file.read(1024)):
-                conn.send(chunk)
-
-        print("File uploaded successfully")
+        # print(f"Uploading {file_path}...")
+        # conn.send(command.encode('utf-8'))
+        #
+        # file_size = os.path.getsize(file_path)
+        # conn.send(file_size.to_bytes(8, 'big'))
+        # print(f"Sent file size: {file_size} bytes")
+        #
+        # with open(file_path, "rb") as file:
+        #     while (chunk := file.read(1024)):
+        #         conn.send(chunk)
+        #
+        # print("File uploaded successfully")
 
     def ipconfig(self):
         if self.os_client == "Linux":
