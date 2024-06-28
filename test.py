@@ -1,5 +1,6 @@
 import queue
 import socket
+import ssl
 import threading
 
 import lib
@@ -17,6 +18,9 @@ thread_to_conn = {}
 context_manager = None  # Context manager to know in which context the program is running (client or manager)
 connection_allowed = True
 
+# Charger les fichiers de certificats SSL
+context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+context.load_cert_chain(certfile='cert.pem', keyfile='key.pem')
 
 def handle_client(conn, addr, command_queue):
     global connection_allowed
@@ -89,6 +93,7 @@ def accept_clients(s):
         try:
             s.settimeout(1)
             conn, addr = s.accept()
+            conn = context.wrap_socket(conn, server_side=True)  # Envelopper le socket avec SSL
             clients.append((conn, addr))
 
             # Create a new queue for this client
