@@ -33,14 +33,8 @@ def print_help_client():
         }
     }
 
-    print(f"{'Command':<15}{'Description and Usage':<50}")
-    print("=" * 65)
-    for command, info in commands.items():
-        description = info["description"]
-        usage = info["usage"]
-        print(f"{command:<15}{description:<50}")
-        print(f"{'':<15}{'Usage: ' + usage:<50}")
-    print("\n")
+    print_help(commands)
+
 
 def print_help_manager():
     commands = {
@@ -57,7 +51,10 @@ def print_help_manager():
             "usage": "use <client_id>"
         }
     }
+    print_help(commands)
 
+
+def print_help(commands):
     print(f"{'Command':<15}{'Description and Usage':<50}")
     print("=" * 65)
     for command, info in commands.items():
@@ -96,4 +93,3 @@ def use_manger(thread_id, thread_to_conn, client_queues):
 
         if sub_command == "close":
             return "close"
-
