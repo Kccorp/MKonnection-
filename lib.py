@@ -103,18 +103,47 @@ def upload_file(file_path, conn):
     file_size = os.path.getsize(file_path)
     conn.send(file_size.to_bytes(8, 'big'))
 
-    cpt = 1
+    nbr_of_dot = 1
     with open(file_path, "rb") as file:
         while chunk := file.read(1024):
             conn.send(chunk)
             percent = conn.recv(1024).decode('utf-8')
-            # print(f"Pending", end="")
-            # print(pending + "."*cpt, end="", flush=True)
-            print("\rPending (" + percent + "%)" + "." * cpt, end="", flush=True)
-            if cpt == 3:
-                cpt = 1
-            else:
-                cpt += 1
+            nbr_of_dot = print_progress(percent, nbr_of_dot)
+
+
+def print_progress(progress, nbr_of_dot):
+    print("\rReceiving (" + progress + "%)" + "." * nbr_of_dot, end="", flush=True)
+    if nbr_of_dot == 3:
+        return 1
+    else:
+        return nbr_of_dot + 1
+
+
+def download_file(file_path, conn):
+    if '/' in file_path:
+        filename = file_path.split("/")[-1]
+    elif '\\' in file_path:
+        filename = file_path.split("\\")[-1]
+    else:
+        filename = file_path
+
+    # receive the file size
+    file_size = int.from_bytes(conn.recv(8), 'big')
+    print(f"Expected file size: {file_size} bytes")
+
+    # receive the file
+    nbr_of_dot = 1
+    with open(filename, "wb") as file:
+        received = 0
+        while received < file_size:
+            chunk = conn.recv(min(1024, file_size - received))
+            if not chunk:
+                raise EOFError('Connection closed before receiving all the data')
+            file.write(chunk)
+            received += len(chunk)
+            # calculate progress
+            progress = str(round(((received / file_size) * 100)))
+            nbr_of_dot = print_progress(progress, nbr_of_dot)
 
 
 def interact_shell(conn, client_id):

