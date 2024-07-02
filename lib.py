@@ -79,7 +79,7 @@ def print_mko_client(client_id):
     print(f"MKo (client {client_id}) > ", end="")
 
 
-def use_manger(thread_id, thread_to_conn, client_queues):
+def use_manager(thread_id, thread_to_conn, client_queues):
     print(f"You are now using client {thread_id}")
     print_mko_client(thread_id)
     # Interact with the selected thread
@@ -88,6 +88,8 @@ def use_manger(thread_id, thread_to_conn, client_queues):
 
         if sub_command.lower() == "exit":
             break
+        elif sub_command.lower() == "":
+            print_mko_client(thread_id)
 
         if sub_command:
             conn = thread_to_conn[thread_id]

