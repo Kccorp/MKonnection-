@@ -192,6 +192,7 @@ def command_line_interface():
             except Exception as e:
                 print(f"An error occurred")
                 print("Unknown command. Try 'use <ID>' or 'list' to list all threads.")
+                lib.print_mko_prefix()
 
         elif command == "list":
             print("ID   TID   \n--   ---  ")

@@ -81,13 +81,16 @@ class Client:
         return command
 
     def dowload(self, command):
-        file_path = command.split(" ")[1]
+
+        filename, file_path = lib.format_filename(command)
+        # file_path = command.split(" ")[1]
+
         # remove quotes
-        file_path = file_path.replace('"', '')
+        # file_path = file_path.replace('"', '')
         print("file_path: ", file_path)
-        if not os.path.isfile(file_path):
-            print(f"The file {file_path} already exist.")
-            return "error"
+        # if os.path.exists(filename):
+        #     print(f"The file {filename} already exist.")
+        #     return "error"
 
         return command
 

