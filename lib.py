@@ -135,6 +135,7 @@ def download_file(file_path, conn):
     if file_status == "File not found":
         print("File not found or not readable access.")
 
+
     else:
         # receive the file size
         file_size = int.from_bytes(conn.recv(8), 'big')

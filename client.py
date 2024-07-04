@@ -68,6 +68,7 @@ def download_feature(file_path, conn):
     else:
         print(f"The file {file_path} doesn't exist or is not readable.")
         conn.send(b"File not found")
+        conn.send(b"The file doesn't exist or is not readable.")
 
 
 def take_screenshot():
