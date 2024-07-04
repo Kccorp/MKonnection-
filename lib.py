@@ -125,6 +125,7 @@ def print_progress(progress, nbr_of_dot):
 def download_file(file_path, conn):
     filename, file_path = format_filename(file_path)
 
+
     # check if Download folder exists
     if not os.path.exists("Downloads"):
         os.makedirs("Downloads")
@@ -137,11 +138,11 @@ def download_file(file_path, conn):
     else:
         # receive the file size
         file_size = int.from_bytes(conn.recv(8), 'big')
-        print(f"Expected file size: {file_size} bytes")
+        # print(f"Expected file size: {file_size} bytes")
 
         # receive the file
         random_str = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz', k=8)) + "_"
-        # random_str = random_str + "_"
+
         nbr_of_dot = 1
         with open("Downloads/"+random_str + filename, "wb") as file:
             received = 0

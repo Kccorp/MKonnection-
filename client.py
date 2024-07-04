@@ -13,7 +13,6 @@ def format_filename(commande):
     file_path = commande.split(" ", 1)[1]
     file_path = file_path.replace('"', '')
     if '/' in file_path:
-        print("file_path: ", file_path)
         return file_path.split("/")[-1], file_path
     elif '\\' in file_path:
         return file_path.split("\\")[-1], file_path
@@ -26,7 +25,7 @@ def upload_feature(filename, conn):
 
     # Recevoir la taille du fichier (8 octets)
     file_size = int.from_bytes(conn.recv(8), 'big')
-    print(f"Expected file size: {file_size} bytes")
+    # print(f"Expected file size: {file_size} bytes")
 
     # Recevoir le fichier en morceaux de 1024 octets
     with open(filename, "wb") as file:
@@ -56,7 +55,7 @@ def download_feature(file_path, conn):
         # Send the file size (8 bytes)
         file_size = os.path.getsize(file_path)
         conn.send(file_size.to_bytes(8, 'big'))
-        print(f"Sent file size: {file_size} bytes")
+        # print(f"Sent file size: {file_size} bytes")
 
         # Send the file in chunks of 1024 bytes
         with open(file_path, "rb") as file:
@@ -113,7 +112,7 @@ def connect_to_server():
     while True:
         command = conn.recv(1024).decode('utf-8')
 
-        print(f"Received command: {command}")
+        # print(f"Received command: {command}")
 
         if command.lower() == "close":
             break

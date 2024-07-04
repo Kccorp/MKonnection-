@@ -87,7 +87,7 @@ class Client:
 
         # remove quotes
         # file_path = file_path.replace('"', '')
-        print("file_path: ", file_path)
+        # print("file_path: ", file_path)
         # if os.path.exists(filename):
         #     print(f"The file {filename} already exist.")
         #     return "error"
