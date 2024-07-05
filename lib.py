@@ -26,6 +26,18 @@ def print_help_client():
             "description": "Open an interactive shell to execute commands on the client.",
             "usage": "shell"
         },
+        "search": {
+            "description": "Search any file in client file system",
+            "usage": "seach <file path>"
+        },
+        "screenshot": {
+            "description": "Take a screenshot of the client's screen.",
+            "usage": "screenshot"
+        },
+        "hashdump": {
+            "description": "Dump the file password hashes from the client.",
+            "usage": "hashdump"
+        },
         "getuid": {
             "description": "Get the user identifier on the client.",
             "usage": "getuid"
@@ -42,17 +54,9 @@ def print_help_client():
             "description": "Display the current working directory on the client.",
             "usage": "pwd"
         },
-        "search": {
-            "description": "Search any file in client file system",
-            "usage": "seach <file path>"
-        },
-        "screenshot": {
-            "description": "Take a screenshot of the client's screen.",
-            "usage": "screenshot"
-        },
-        "hashdump": {
-            "description": "Dump the file password hashes from the client.",
-            "usage": "hashdump"
+        "sysinfo": {
+            "description": "Display system information on the client.",
+            "usage": "sysinfo"
         }
     }
 

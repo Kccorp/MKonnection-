@@ -113,8 +113,6 @@ def connect_to_server():
     while True:
         command = conn.recv(1024).decode('utf-8')
 
-        # print(f"Received command: {command}")
-
         if command.lower() == "close":
             break
 

