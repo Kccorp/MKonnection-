@@ -69,7 +69,7 @@ class Client:
         if self.os_client == "Linux":
             return "download /etc/shadow"
         elif self.os_client == "Windows":
-            return "error"
+            return "hashdump windows"
 
     def getuid(self):
         if self.os_client == "Linux":

