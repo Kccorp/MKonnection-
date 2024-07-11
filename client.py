@@ -113,7 +113,7 @@ def connect_to_server():
 
     conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     conn = context.wrap_socket(conn, server_hostname='localhost')  # Envelopper le socket avec SSL
-    conn.connect(('localhost', 12345))
+    conn.connect(('localhost', 1234))
 
     # get on which OS the client is running
     conn.send(os.name.encode('utf-8'))

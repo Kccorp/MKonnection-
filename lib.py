@@ -136,11 +136,11 @@ def upload_file(file_path, conn):
         while chunk := file.read(1024):
             conn.send(chunk)
             percent = conn.recv(1024).decode('utf-8')
-            nbr_of_dot = print_progress(percent, nbr_of_dot)
+            nbr_of_dot = print_progress(percent, nbr_of_dot, file_path)
 
 
-def print_progress(progress, nbr_of_dot):
-    print("\rReceiving (" + progress + "%)" + "." * nbr_of_dot, end=" ", flush=True)
+def print_progress(progress, nbr_of_dot, filepath):
+    print(f"\rReceiving {filepath}(" + progress + "%)" + "." * nbr_of_dot, end=" ", flush=True)
     if nbr_of_dot == 3:
         return 1
     else:
@@ -159,11 +159,10 @@ def download_file(file_path, conn):
     if file_status == "File not found":
         print("File not found or not readable access.")
 
-
     else:
         # receive the file size
         file_size = int.from_bytes(conn.recv(8), 'big')
-        print(f"Expected file size: {file_size} bytes")
+        # print(f"Expected file size: {file_size} bytes")
 
         # receive the file
         random_str = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz', k=8)) + "_"
@@ -180,7 +179,7 @@ def download_file(file_path, conn):
                 received += len(chunk)
                 # calculate progress
                 progress = str(round(((received / file_size) * 100)))
-                nbr_of_dot = print_progress(progress, nbr_of_dot)
+                nbr_of_dot = print_progress(progress, nbr_of_dot, download_path)
 
         return download_path
 
