@@ -37,7 +37,7 @@ The following commands are available:
 - `shell` - Start an interactive shell
 - `download <file>` - Download a file from the server
 - `upload <file>` - Upload a file to the server
-- `screenshot` - Take a screenshot of the client's screen
+- `screenshot` - Take a screenshot of the client's screen [!! not working on wayland !!]
 - `hashdump` - Dump password hashes from the client
 
 

