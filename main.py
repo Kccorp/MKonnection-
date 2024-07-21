@@ -47,7 +47,7 @@ def handle_client(conn, addr, command_queue):
                 # prepare the command
                 command = command_queue.get()
                 command = command.replace('"', '')
-                command = client.command_controller(command.lower())
+                command = client.command_controller(command)
 
                 # Send the command to the client
                 if command != "shell":

@@ -1,5 +1,4 @@
 import os
-
 import lib
 
 
@@ -31,15 +30,15 @@ class Client:
         if command.lower() == "help" or command == "?":
             lib.print_help_client()
             return "help"
-        if command == "getuid":
+        if command.lower() == "getuid":
             return self.getuid()
-        elif command == "ipconfig":
+        elif command.lower() == "ipconfig":
             return self.ipconfig()
-        elif command == "ls":
+        elif command.lower() == "ls":
             return self.ls()
-        elif command == "close":
+        elif command.lower() == "close":
             return "close"
-        elif command == "pwd":
+        elif command.lower() == "pwd":
             return self.pwd()
         elif command.startswith("search"):
             return self.search(command)
@@ -81,8 +80,11 @@ class Client:
         file_path = command.split(" ")[1]
         # remove quotes
         file_path = file_path.replace('"', '')
-        print("file_path: ", file_path)
-        if not os.path.isfile(file_path):
+        print(f"file_path: {file_path}")
+        # if not os.path.isfile(file_path):
+        #     print(f"The file {file_path} doesn't exist.")
+
+        if not os.path.exists(file_path) and not os.access(file_path, os.R_OK):
             print(f"The file {file_path} doesn't exist.")
             return "error"
 
