@@ -1,4 +1,4 @@
-# MKonnection
+# MKonnection-
 
 MKonnection is a simple client-server application written in Python. It allows for basic command execution and file transfer between the client and the server.
 
